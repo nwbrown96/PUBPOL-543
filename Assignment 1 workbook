@@ -1,0 +1,67 @@
+---
+title: "Assignment 1 workbook"
+output: html_notebook
+---
+Packages
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(scales)
+library(ggthemes)
+```
+
+Data
+```{r}
+df = read.csv('https://raw.githubusercontent.com/alyssatn/RWorkshopHW/main/Report_Card_Enrollment_from_2014-15_to_Current_Year.csv')
+```
+
+Setup
+```{r}
+df6=df[df$Gradelevel=="6th Grade",]
+df6$All.Students=gsub(pattern = ',', replacement = "",df6$All.Students)
+df6$All.Students=as.numeric(df6$All.Students)
+df6$gap = df6$All.Students-78603
+df6$gap_lead = 100 * (df6$All.Students - lead(df6$All.Students))/lead(df6$All.Students)
+df6$PositiveGap=ifelse(df6$gap_lead > 0,"Yes","No")
+df6$PositiveGap=as.character(df6$PositiveGap) #I don't know if this matters but I have it here anyway
+df6[8,38] = "No" #manually updating the data for the 2014-2015 year
+df6[8,36] = 0 #manually updating the data for the 2014-2015 year
+df6$xlabel = c(7.7,6.7,5.3,4.3,3.3,2.3,1.3,2)#X coordinates for the line segment labels
+df6$ylabel = c(5273 - ((5273 - 2135)/2), 9606 - (9606 - 5273)/2, 8643 - (8643 - 9606)/2, 8643 - (8643 - 5632)/2,5642 - (5632-2707)/2, 2707 - (2702-1415)/2,(1415/2), 600)#Y coordinates for the line segment labels
+```
+
+Plot
+```{r}
+base=ggplot(data=df6,
+            aes(x=SchoolYear,
+                y=gap))
+plot1=base + geom_bar(fill = "black",
+                      stat = 'identity') + 
+      labs(title="Fewer 6th graders were enrolled in Washington State public schools after the Covid-19 Pandemic",
+                     x ="School Year", 
+                     y = "Change in number of 6th graders since 2014",
+                     caption = "Source: Washington State Department of Education") + 
+      theme(plot.caption = element_text(hjust = 0, size = 8), 
+                      plot.title = element_text(hjust = 0.5, size = 11), axis.title = element_text(size = 10))
+plot2 = plot1 + geom_segment(aes(x = 1, y = 0, xend=2, yend = 1415), color = "green") + 
+        geom_segment(aes(x = 2, y = 1415, xend=3, yend = 2707), color = "green") + 
+        geom_segment(aes(x = 3, y = 2707, xend=4, yend = 5632), color = "green") + 
+        geom_segment(aes(x = 4, y = 5632, xend=5, yend = 8643), color = "green") + 
+        geom_segment(aes(x = 5, y = 8643, xend=6, yend = 9606), color = "green") + 
+        geom_segment(aes(x = 6, y = 9606, xend=7, yend = 5273), color = "red") + 
+        geom_segment(aes(x = 7, y = 5273, xend=8, yend = 2135), color = "red")  
+plot3 = plot2 + geom_text(size = 3,#fontface = "bold",
+                          aes(x =  xlabel, y = ylabel, label = paste0(round(gap_lead,0), '%')))
+plot4 = plot3 + geom_vline(xintercept = 6.5, #where
+                           size=1.5, #thickness
+                           alpha=0.8,#transparency
+                           color = "blue") + 
+        annotate(geom = 'text', 
+                 label = "<- Start of Covid-19 pandemic",
+                 size = 2.9,
+                 y = 9001,
+                 x=7.5,
+                 angle=0)
+plot4
+```
+
